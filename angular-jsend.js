@@ -69,15 +69,13 @@
 
         this.setErrorCallback = function (callback) {
             if (callback === 'alert') {
-                _errorCallback = alertErrorCallback;
+                _errorCallback = function (config, response) {
+                    alert(config.method + ' ' + config.url + '\n' + angular.toJson(response, 4));
+                };
             } else {
                 _errorCallback = callback;
             }
         };
-
-        function alertErrorCallback(config, response) {
-            alert(config.method + ' ' + config.url + '\n' + angular.toJson(response, 4));
-        }
 
         //--------------------------------------------------------------------
         // PROVIDER HELPERS
@@ -119,11 +117,19 @@
                     }
                 }
             } else {
-                obj = {
-                    status: 'error',
-                    code: response.status,
-                    message: response.statusText
-                };
+                if (res.status) {
+                    obj = {
+                        status: 'error',
+                        code: response.status,
+                        message: response.statusText
+                    };
+                } else {
+                    obj = {
+                        status: 'error',
+                        code: 0,
+                        message: 'Cannot reach the server.'
+                    };
+                }
             }
             if (obj.status === 'success') {
                 if (typeof _successCallback === 'function') {
