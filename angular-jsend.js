@@ -117,7 +117,7 @@
                     }
                 }
             } else {
-                if (res.status) {
+                if (response.status) {
                     obj = {
                         status: 'error',
                         code: response.status,

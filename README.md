@@ -2,7 +2,7 @@
 
 An AngularJS module providing HTTP methods that process the responses as JSend objects.
 
-v0.0.5
+v0.0.6
 
 ## Overview
 
