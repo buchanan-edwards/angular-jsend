@@ -230,7 +230,6 @@
 
             return function () {
                 var url = makeUrl(Array.prototype.slice.call(arguments));
-                console.log('IN THE FUNCTION', url);
                 return {
                     get: fnGet(url),
                     put: fnPut(url),
