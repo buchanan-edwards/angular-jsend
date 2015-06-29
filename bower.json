@@ -1,7 +1,7 @@
 {
     "name": "angular-jsend",
     "main": "angular-jsend.js",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "homepage": "https://github.com/buchanan-edwards/angular-jsend",
     "repository": {
         "type": "git",
@@ -25,6 +25,6 @@
     ],
     "dependencies": {
         "angular": ">=1.3.0",
-        "strformat": ">=0.0.5"
+        "angular-strformat": ">=0.0.5"
     }
 }
