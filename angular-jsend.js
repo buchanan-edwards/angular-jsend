@@ -68,8 +68,16 @@
         };
 
         this.setErrorCallback = function (callback) {
-            _errorCallback = callback;
+            if (callback === 'alert') {
+                _errorCallback = alertErrorCallback;
+            } else {
+                _errorCallback = callback;
+            }
         };
+
+        function alertErrorCallback(config, response) {
+            alert(config.method + ' ' + config.url + '\n' + angular.toJson(response, 4));
+        }
 
         //--------------------------------------------------------------------
         // PROVIDER HELPERS
@@ -97,7 +105,8 @@
             }
         }
 
-        // Processes the JSend response for an HTTP success.
+        // Processes the JSend response for an HTTP error.
+        // Note that the JSend status could still indicate success.
         function httpError(response, deferred) {
             var obj = response.data;
             if (isJSendResponse(obj)) {

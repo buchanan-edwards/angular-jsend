@@ -2,7 +2,7 @@
 
 An AngularJS module providing HTTP methods that process the responses as JSend objects.
 
-v0.0.2
+v0.0.3
 
 ## Overview
 
@@ -86,6 +86,10 @@ jsendProvider.setErrorCallback(callback)
 
 Specifies a function that is called whenever a `jsend` promise is rejected. The callback function will be called with two arguments (`config`, `response`) where `config` is the configuration object that was used to generate the request and `response` is the entire JSend response object. The `status` property of the response object will be set to either `"fail"` or `"error"`.
 
+#### Alert Error Handler
+
+For debugging, or plain lazyness, you can specify a default alert error handler by simply passing the string `"alert"` to the `setErrorCallback` configuration function like this: `jsendProvider.setErrorCallback('alert');`. The method, URL, and response will be presented in a browser alert popup.
+
 ### Service API
 
 The `jsend` service can be injected into your own services or controllers. It is a function (not an object or instance) that creates a set of methods when called. These methods are all bound to the URL created by the `jsend` function.
@@ -139,6 +143,31 @@ jsend(url, ...).delete()
 ```
 
 Performs an HTTP DELETE request. Returns a promise that is resolved or rejected based on the returned JSend object status or the HTTP status if the response does not look like a JSend object.
+
+#### A Worked GET Example
+
+Assume we want to perform a GET for a specific user's security information and we want the results to omit any personally identifiable information (PII). The full URL for this fictitious example is:
+
+    /api/v1/users/19321/security?pii=false
+
+For this example, let's also assume that we have a `request` object that looks like this:
+
+```javascript
+var request = {
+    userId: 19321,
+    information: 'security'
+};
+```
+
+Here is one possibility for what the `jsend` GET call could look like:
+
+```javascript
+jsend('/api/v1/users/{userId}/{information}', request).get({
+    pii: false
+});
+```
+
+Notice that the URL is constructed using property name placeholders (`{userId}` and `{information}`) and that the query parameters are specified as a `params` object. Finally, we could have omitted the `/api/v1` prefix by specifying it using the `jsendProvider.setRelativeBase('/api/v1')` configuration setting.
 
 ### Synthetic Error Responses
 
