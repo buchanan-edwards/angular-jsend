@@ -243,4 +243,4 @@
     }
 
     module.provider('jsend', provider);
-})(angular.module('jsend'));
+})(angular.module('jsend', ['strformat']));
