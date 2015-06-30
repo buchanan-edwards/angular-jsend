@@ -121,7 +121,7 @@ The `jsend` service function uses the [angular-strformat](https://github.com/fhe
 jsend(url, ...)
 ```
 
-Creates a URL from the specified string performing placeholder replacement (as specified by[angular-strformat](https://github.com/fhellwig/strformat) module) and prepending the relative base (if specified by the provider). Returns an object having five HTTP methods that are all bound to this URL.
+Creates a URL from the specified string performing placeholder replacement (as specified by the [angular-strformat](https://github.com/fhellwig/strformat) module) and prepending the relative base (if specified by the provider). Returns an object having five HTTP methods that are all bound to this URL.
 
 #### Issuing a GET Request
 
