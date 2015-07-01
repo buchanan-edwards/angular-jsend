@@ -40,115 +40,98 @@
             (value.status === 'success' || value.status === 'fail' || value.status === 'error');
     }
 
+    // Processes the JSend response for an HTTP success and returns a JSend
+    // response object.
+    function httpSuccess(response) {
+        var obj;
+        if (isJSendResponse(response.data)) {
+            obj = response.data;
+        } else {
+            obj = {
+                status: 'success',
+                data: res.status === 204 ? null : res.data
+            };
+        }
+        return obj;
+    }
+
+    // Processes the JSend response for an HTTP error and returns a JSend
+    // response object. Although the HTTP status could have been an error,
+    // the status in the JSend response object can still indicate success.
+    function httpError(response) {
+        var obj;
+        if (isJSendResponse(response.data)) {
+            obj = response.data;
+            if (obj.status === 'error') {
+                if (typeof obj.code !== 'number') {
+                    obj.code = response.status;
+                }
+                if (typeof obj.message !== 'string') {
+                    obj.message = response.statusText;
+                }
+            }
+        } else {
+            if (response.status) {
+                obj = {
+                    status: 'error',
+                    code: response.status,
+                    message: response.statusText
+                };
+            } else {
+                obj = {
+                    status: 'error',
+                    code: 0,
+                    message: 'Cannot reach the server.'
+                };
+            }
+        }
+        return obj;
+    }
+
     //------------------------------------------------------------------------
     // PROVIDER FUNCTION
     //------------------------------------------------------------------------
 
-    function provider() {
+    function jsendProvider() {
 
         //--------------------------------------------------------------------
         // PROVIDER CONFIGURATION
         //--------------------------------------------------------------------
 
-        var _relativeBase = '';
-        var _notifyCallback = null;
-        var _successCallback = null;
-        var _errorCallback = null;
+        var _base = '';
+        var _callback = null;
+        var _debug = false;
 
-        this.setRelativeBase = function (base) {
-            _relativeBase = base;
+        this.setBase = function (base) {
+            if (typeof base !== 'string') {
+                throw new Error('base must be a string');
+            }
+            _base = base;
         };
 
-        this.setNotifyCallback = function (callback) {
-            _notifyCallback = callback;
+        this.setCallback = function (callback) {
+            if (typeof callback !== 'function') {
+                throw new Error('callback must be a function');
+            }
+            _callback = callback;
         };
 
-        this.setSuccessCallback = function (callback) {
-            _successCallback = callback;
+        this.setDebug = function (debug) {
+            if (typeof debug !== 'boolean') {
+                throw new Error('debug must be a boolean');
+            }
+            _debug = debug;
         };
-
-        this.setErrorCallback = function (callback) {
-            if (callback === 'alert') {
-                _errorCallback = function (config, response) {
-                    alert(config.method + ' ' + config.url + '\n' + angular.toJson(response, 4));
-                };
-            } else {
-                _errorCallback = callback;
-            }
-        };
-
-        //--------------------------------------------------------------------
-        // PROVIDER HELPERS
-        //--------------------------------------------------------------------
-
-        // Processes the JSend response for an HTTP success.
-        function httpSuccess(response, deferred) {
-            var obj = response.data;
-            if (!isJSendResponse(obj)) {
-                obj = {
-                    status: 'success',
-                    data: res.status === 204 ? null : res.data
-                };
-            }
-            if (obj.status === 'success') {
-                if (typeof _successCallback === 'function') {
-                    _successCallback(response.config, obj);
-                }
-                deferred.resolve(obj);
-            } else {
-                if (typeof _errorCallback === 'function') {
-                    _errorCallback(response.config, obj);
-                }
-                deferred.reject(obj);
-            }
-        }
-
-        // Processes the JSend response for an HTTP error.
-        // Note that the JSend status could still indicate success.
-        function httpError(response, deferred) {
-            var obj = response.data;
-            if (isJSendResponse(obj)) {
-                if (obj.status === 'error') {
-                    if (typeof obj.code !== 'number') {
-                        obj.code = response.status;
-                    }
-                    if (typeof obj.message !== 'string') {
-                        obj.message = response.statusText;
-                    }
-                }
-            } else {
-                if (response.status) {
-                    obj = {
-                        status: 'error',
-                        code: response.status,
-                        message: response.statusText
-                    };
-                } else {
-                    obj = {
-                        status: 'error',
-                        code: 0,
-                        message: 'Cannot reach the server.'
-                    };
-                }
-            }
-            if (obj.status === 'success') {
-                if (typeof _successCallback === 'function') {
-                    _successCallback(response.config, obj);
-                }
-                deferred.resolve(obj);
-            } else {
-                if (typeof _errorCallback === 'function') {
-                    _errorCallback(response.config, obj);
-                }
-                deferred.reject(obj);
-            }
-        }
 
         //--------------------------------------------------------------------
         // SERVICE FUNCTION
         //--------------------------------------------------------------------
 
-        this.$get = function ($http, $q, strformat) {
+        this.$get = function ($http, $q, $log, strformat) {
+
+            //----------------------------------------------------------------
+            // SERVICE HELPERS
+            //----------------------------------------------------------------
 
             // Creates a URL using strformat.
             function makeUrl(args) {
@@ -156,90 +139,97 @@
                 if (path.substr(0, 4) === 'http') {
                     return path; // do not prepend base if absolute
                 } else {
-                    return _relativeBase + path;
+                    return _base + path;
                 }
             }
 
             // Executes the HTTP request specified by the config object.
             function http(config) {
                 var deferred = $q.defer();
-                if (typeof _notifyCallback === 'function') {
-                    _notifyCallback(config);
+                if (_callback) {
+                    _callback.call(config, null);
                 }
                 $http(config).then(function (response) {
-                    httpSuccess(response, deferred);
+                    resolveOrReject(deferred, config, httpSuccess(response));
                 }, function (response) {
-                    httpError(response, deferred);
+                    resolveOrReject(deferred, config, httpError(response));
                 });
                 return deferred.promise;
             }
 
-            // Creates a GET function bound to the specified URL.
-            function fnGet(url) {
-                return function (params) {
-                    return http({
-                        url: url,
-                        method: 'GET',
-                        params: params
-                    });
-                };
+            // Resolves or rejects the promise depending on the JSend status.
+            function resolveOrReject(deferred, config, obj) {
+                if (_debug) {
+                    debug(config, obj);
+                }
+                if (_callback) {
+                    _callback.call(config, obj);
+                }
+                if (obj.status === 'success') {
+                    deferred.resolve(obj);
+                } else {
+                    deferred.reject(obj);
+                }
             }
 
-            // Creates a PUT function bound to the specified URL.
-            function fnPut(url) {
-                return function (data) {
-                    return http({
-                        url: url,
-                        method: 'PUT',
-                        data: data
-                    });
-                };
+            // Logs the response and alerts on fail or error.
+            function debug(config, response) {
+                if (response.status === 'success') {
+                    $log.debug(config.method, config.url, response);
+                } else {
+                    $log.error(config.method, config.url, response);
+                    var req = config.method + ' ' + config.url;
+                    var res = angular.toJson(response, 4);
+                    alert(req + '\n' + res);
+                }
             }
 
-            // Creates a POST function bound to the specified URL.
-            function fnPost(url) {
-                return function (data) {
-                    return http({
-                        url: url,
-                        method: 'POST',
-                        data: data
-                    });
-                };
+            //----------------------------------------------------------------
+            // JSEND CLASS
+            //----------------------------------------------------------------
+
+            function JSend(url) {
+                this.url = url;
             }
 
-            // Creates a PATCH function bound to the specified URL.
-            function fnPatch(url) {
-                return function (data) {
-                    return http({
-                        url: url,
-                        method: 'PATCH',
-                        data: data
-                    });
-                };
+            JSend.prototype.get = function (params) {
+                return http({
+                    url: this.url,
+                    method: 'GET',
+                    params: params
+                });
+            };
+
+            JSend.prototype.put = function (data) {
+                return http({
+                    url: this.url,
+                    method: 'PUT',
+                    data: data
+                });
             }
 
-            // Creates a DELETE function bound to the specified URL.
-            function fnDelete(url) {
-                return function (data) {
-                    return http({
-                        url: url,
-                        method: 'DELETE'
-                    });
-                };
+            JSend.prototype.post = function (data) {
+                return http({
+                    url: this.url,
+                    method: 'POST',
+                    data: data
+                });
+            }
+
+            JSend.prototype.delete = function () {
+                return http({
+                    url: this.url,
+                    method: 'PATCH',
+                    data: data
+                });
             }
 
             return function () {
                 var url = makeUrl(Array.prototype.slice.call(arguments));
-                return {
-                    get: fnGet(url),
-                    put: fnPut(url),
-                    post: fnPost(url),
-                    patch: fnPatch(url),
-                    delete: fnDelete(url)
-                };
+                return new JSend(url);
             };
         }
     }
 
-    module.provider('jsend', provider);
+    module.provider('jsend', jsendProvider);
 })(angular.module('jsend', ['strformat']));

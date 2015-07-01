@@ -1,7 +1,7 @@
 {
     "name": "angular-jsend",
     "main": "angular-jsend.js",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "homepage": "https://github.com/buchanan-edwards/angular-jsend",
     "repository": {
         "type": "git",
@@ -10,7 +10,7 @@
     "authors": [
         "Frank Hellwig <frank@hellwig.org>"
     ],
-    "description": "An AngularJS module providing HTTP methods that process the responses as JSend objects.",
+    "description": "An AngularJS module that provides HTTP methods and processes JSend responses."
     "keywords": [
         "angular",
         "jsend"

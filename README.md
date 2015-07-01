@@ -1,8 +1,8 @@
 # angular-jsend
 
-An AngularJS module providing HTTP methods that process the responses as JSend objects.
+An AngularJS module that provides HTTP methods and processes JSend responses.
 
-v0.0.6
+v0.0.7
 
 ## Overview
 
@@ -52,7 +52,7 @@ The `angular-jsend` utility provides a few features that help you deal with JSen
 
 3. If your API returns a standard HTTP response such as 404 (Not Found) *but does not return a JSend object*, then a JSend object is created with the appropriate `status`, `code`, and  `message` properties and the promise is rejected with this object.
 
-4. The `jsendProvider` can be configured using a relative base so that you need not prefix each URL with the part that is common to each call. In the example above, all calls start with `/api/v1`. Calling `jsendProvider.setRelativeBase('/api/v1')` in your module configuration takes care of this.
+4. The `jsendProvider` can be configured using a base URI so that you need not prefix each URL with the part that is common to each call. In the example above, all calls start with `/api/v1`. Calling `jsendProvider.setBase('/api/v1')` in your module configuration takes care of this.
 
 5. You may want to display an alert for any JSend promise rejections. The `jsendProvider` allows such global handlers to be specified so that your code does not require reject handlers for every call.
 
@@ -62,41 +62,39 @@ There are two parts to the API: the provider API allowing you to perform module-
 
 ### The Provider API
 
-The `jsendProvider` can be configured in your module using four methods. These set global values that apply to all `jsend` calls made within that module.
+The `jsendProvider` can be configured in your module using three methods. These set global values that apply to all `jsend` calls made within that module.
 
-#### Setting the Relative Base
+#### Setting the Base URI
 
 ```javascript
-jsendProvider.setRelativeBase(base)
+jsendProvider.setBase(base)
 ```
 
 Specifies a string that is prepended all URLs *not* beginning with `http` (i.e., all non-absolute URLs). This is useful if all of your API calls are rooted at a standard path such as `/api/v1`.
 
-#### Setting a Notify Callback
+#### Setting a Callback Function
 
 ```javascript
-jsendProvider.setNotifyCallback(callback)
+jsendProvider.setCallback(callback)
+
+function callback(response) {
+    if (response) {
+        console.log('done', this.method, this.url, response);
+    } else {
+        console.log('init', this.method, this.url);
+    }
+}
 ```
 
-Specifies a function that is called at the beginning of any `jsend` call. The callback function will be called with one argument (`config`) where `config` is the configuration object that was used to generate the request.
+Specifies a function that is called at the beginning *and* completion of any `jsend` call. The `this` context of the callback function is the configuration object that was used to generate the request. The context will have at least the `this.method` and `this.url` properties. The response argument will be null when the request is initiated and is set to a JSend response object when the response is received and processed.
 
-#### Setting a Success Callback
+#### Enabling Debug Mode
 
 ```javascript
-jsendProvider.setSuccessCallback(callback)
+jsendProvider.setDebug(debug)
 ```
 
-Specifies a function that is called whenever a `jsend` promise is resolved. The callback function will be called with two arguments (`config`, `response`) where `config` is the configuration object that was used to generate the request and `response` is the entire JSend response object. The `status` property of the response object will be set to `"success"`.
-
-#### Setting an Error Callback
-
-```javascript
-jsendProvider.setErrorCallback(callback)
-```
-
-Specifies a function that is called whenever a `jsend` promise is rejected. The callback function will be called with two arguments (`config`, `response`) where `config` is the configuration object that was used to generate the request and `response` is the entire JSend response object. The `status` property of the response object will be set to either `"fail"` or `"error"`.
-
-For debugging, or plain lazyness, you can specify a default alert error handler by simply passing the string `"alert"` to the `setErrorCallback` configuration function like this: `jsendProvider.setErrorCallback('alert');`. The method, URL, and response will be presented in a browser alert popup.
+If the `debug` argument, which *must* be a boolean, is true, then responses are logged using the AngularJS logging service (`$log`). In addition, all "fail" or "error" responses are presented in a browser alert popup.
 
 ### The Service API
 
@@ -121,7 +119,7 @@ The `jsend` service function uses the [angular-strformat](https://github.com/fhe
 jsend(url, ...)
 ```
 
-Creates a URL from the specified string performing placeholder replacement (as specified by the [angular-strformat](https://github.com/fhellwig/strformat) module) and prepending the relative base (if specified by the provider). Returns an object having five HTTP methods that are all bound to this URL.
+Creates a URL from the specified string performing placeholder replacement (as specified by the [angular-strformat](https://github.com/fhellwig/strformat) module) and prepending the URI base (if specified by the `jsendProvider.setBase` method). Returns an object having five HTTP methods that are all bound to this URL.
 
 #### Issuing a GET Request
 
@@ -186,7 +184,7 @@ jsend('/api/v1/users/{userId}/{information}', request).get({
 });
 ```
 
-Notice that the URL is constructed using property name placeholders (`{userId}` and `{information}`) and that the query parameters are specified as a `params` object. Finally, we could have omitted the `/api/v1` prefix by specifying it using the `jsendProvider.setRelativeBase('/api/v1')` configuration setting.
+Notice that the URL is constructed using property name placeholders (`{userId}` and `{information}`) and that the query parameters are specified as a `params` object. Finally, we could have omitted the `/api/v1` prefix by specifying it using the `jsendProvider.setBase('/api/v1')` configuration setting.
 
 ### Reusing the Bound Object
 
