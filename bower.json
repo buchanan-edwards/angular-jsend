@@ -10,7 +10,7 @@
     "authors": [
         "Frank Hellwig <frank@hellwig.org>"
     ],
-    "description": "An AngularJS module that provides HTTP methods and processes JSend responses.",
+    "description": "An AngularJS module providing HTTP methods that process JSend responses.",
     "keywords": [
         "angular",
         "jsend"

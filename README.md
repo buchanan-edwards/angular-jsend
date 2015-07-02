@@ -1,6 +1,6 @@
 # angular-jsend
 
-An AngularJS module that provides HTTP methods and processes JSend responses.
+An AngularJS module providing HTTP methods that process JSend responses.
 
 v0.0.7
 
@@ -54,7 +54,7 @@ The `angular-jsend` utility provides a few features that help you deal with JSen
 
 4. The `jsendProvider` can be configured using a base URI so that you need not prefix each URL with the part that is common to each call. In the example above, all calls start with `/api/v1`. Calling `jsendProvider.setBase('/api/v1')` in your module configuration takes care of this.
 
-5. You may want to display an alert for any JSend promise rejections. The `jsendProvider` allows such global handlers to be specified so that your code does not require reject handlers for every call.
+5. You may want to display an alert for any JSend promise rejections. The `jsendProvider.setCallback` method allows such a global handler to be specified so that your code does not require reject handlers for every call.
 
 ## API
 
@@ -62,7 +62,7 @@ There are two parts to the API: the provider API allowing you to perform module-
 
 ### The Provider API
 
-The `jsendProvider` can be configured in your module using three methods. These set global values that apply to all `jsend` calls made within that module.
+The `jsendProvider` can be configured in your module using two methods. These set global values that apply to all `jsend` calls made within that module.
 
 #### Setting the Base URI
 
@@ -87,14 +87,6 @@ function callback(response) {
 ```
 
 Specifies a function that is called at the beginning *and* completion of any `jsend` call. The `this` context of the callback function is the configuration object that was used to generate the request. The context will have at least the `this.method` and `this.url` properties. The response argument will be null when the request is initiated and is set to a JSend response object when the response is received and processed.
-
-#### Enabling Debug Mode
-
-```javascript
-jsendProvider.setDebug(debug)
-```
-
-If the `debug` argument, which *must* be a boolean, is true, then responses are logged using the AngularJS logging service (`$log`). In addition, all "fail" or "error" responses are presented in a browser alert popup.
 
 ### The Service API
 

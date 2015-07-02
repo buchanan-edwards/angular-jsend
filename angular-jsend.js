@@ -100,7 +100,6 @@
 
         var _base = '';
         var _callback = null;
-        var _debug = false;
 
         this.setBase = function (base) {
             if (typeof base !== 'string') {
@@ -114,13 +113,6 @@
                 throw new Error('callback must be a function');
             }
             _callback = callback;
-        };
-
-        this.setDebug = function (debug) {
-            if (typeof debug !== 'boolean') {
-                throw new Error('debug must be a boolean');
-            }
-            _debug = debug;
         };
 
         //--------------------------------------------------------------------
@@ -159,28 +151,15 @@
 
             // Resolves or rejects the promise depending on the JSend status.
             function resolveOrReject(deferred, config, obj) {
-                if (_debug) {
-                    debug(config, obj);
-                }
                 if (_callback) {
                     _callback.call(config, obj);
                 }
                 if (obj.status === 'success') {
+                    $log.debug(config.method, config.url, obj);
                     deferred.resolve(obj);
                 } else {
+                    $log.error(config.method, config.url, obj);
                     deferred.reject(obj);
-                }
-            }
-
-            // Logs the response and alerts on fail or error.
-            function debug(config, response) {
-                if (response.status === 'success') {
-                    $log.debug(config.method, config.url, response);
-                } else {
-                    $log.error(config.method, config.url, response);
-                    var req = config.method + ' ' + config.url;
-                    var res = angular.toJson(response, 4);
-                    alert(req + '\n' + res);
                 }
             }
 
