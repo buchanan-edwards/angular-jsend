@@ -46,7 +46,7 @@ How is calling `jsend(<url>).get()` any different that just calling `$http.get(<
 
 The `angular-jsend` utility provides a few features that help you deal with JSend responses.
 
-1. The `jsend` function creates a URL based on string formatting using the [angular-strformat](https://github.com/fhellwig/strformat) module. This allows you to be creative in how you generate the URL. The object returned by `jsend` has the five methods (`get`, `put`, `post`, `patch`, and `delete`) bound to the URL created by `jsend`.
+1. The `jsend` function creates a URL based on string formatting using the [strformat](https://github.com/fhellwig/strformat) module. This allows you to be creative in how you generate the URL. The object returned by `jsend` has the five methods (`get`, `put`, `post`, `patch`, and `delete`) bound to the URL created by `jsend`.
 
 2. Calling one of the five methods returns a promise that is resolved or rejected *based on the JSend status* and not the HTTP response status code. This is important. You may have an API where all responses are returned using a 200 (OK) response but the JSend status could be `fail` or `error`. The promise is rejected regardless of the 200 (OK) HTTP response status.
 
@@ -103,7 +103,7 @@ jsend('/users/{0}', userId).get().then(...);
 jsend.get(...).then(...);
 ```
 
-The `jsend` service function uses the [angular-strformat](https://github.com/fhellwig/strformat) module to format your URL. Since there can be an arbitrary number of placeholders (`{0}`, `{1}`, etc.), there is no way of knowing when the replacement values end and the optional `params` object (`get`) or `data` object (`put`, `post`, and `patch`) begins. Therefore, the `params` and `data` objects are passed to the HTTP method while the `jsend` service method creates the URL. Additional utility of this construct is described in a subsequent section, *Reusing the Bound Object*.
+The `jsend` service function uses the [strformat](https://github.com/fhellwig/strformat) module to format your URL. Since there can be an arbitrary number of placeholders (`{0}`, `{1}`, etc.), there is no way of knowing when the replacement values end and the optional `params` object (`get`) or `data` object (`put`, `post`, and `patch`) begins. Therefore, the `params` and `data` objects are passed to the HTTP method while the `jsend` service method creates the URL. Additional utility of this construct is described in a subsequent section, *Reusing the Bound Object*.
 
 #### Creating a Bound Object
 
@@ -111,7 +111,7 @@ The `jsend` service function uses the [angular-strformat](https://github.com/fhe
 jsend(url, ...)
 ```
 
-Creates a URL from the specified string performing placeholder replacement (as specified by the [angular-strformat](https://github.com/fhellwig/strformat) module) and prepending the URI base (if specified by the `jsendProvider.setBase` method). Returns an object having five HTTP methods that are all bound to this URL.
+Creates a URL from the specified string performing placeholder replacement (as specified by the [strformat](https://github.com/fhellwig/strformat) module) and prepending the URI base (if specified by the `jsendProvider.setBase` method). Returns an object having five HTTP methods that are all bound to this URL.
 
 #### Issuing a GET Request
 
