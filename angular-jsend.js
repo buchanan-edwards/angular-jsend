@@ -169,11 +169,12 @@
                 if (_responseCallback) {
                     _responseCallback.call(config, obj);
                 }
+                var req = config.method + ' ' + config.url;
                 if (obj.status === 'success') {
-                    $log.debug(config.method, config.url, obj);
+                    $log.debug(req, obj);
                     deferred.resolve(obj);
                 } else {
-                    $log.error(config.method, config.url, obj);
+                    $log.error(req, obj);
                     deferred.reject(obj);
                 }
             }
