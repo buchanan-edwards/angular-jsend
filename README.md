@@ -52,9 +52,9 @@ The `angular-jsend` utility provides a few features that help you deal with JSen
 
 3. If your API returns a standard HTTP response such as 404 (Not Found) *but does not return a JSend object*, then a JSend object is created with the appropriate `status`, `code`, and  `message` properties and the promise is rejected with this object.
 
-4. The `jsendProvider` can be configured using a base URI so that you need not prefix each URL with the part that is common to each call. In the example above, all calls start with `/api/v1`. Calling `jsendProvider.setBase('/api/v1')` in your module configuration takes care of this.
+4. The `jsendProvider` can be configured using a base URI so that you need not prefix each URL with the part that is common to each call. In the example above, all calls start with `/api/v1`. Calling `jsendProvider.setRelativeBase('/api/v1')` in your module configuration takes care of this.
 
-5. You may want to display an alert for any JSend promise rejections. The `jsendProvider.setCallback` method allows such a global handler to be specified so that your code does not require reject handlers for every call.
+5. You may want to perform specific tasks such as managing spinners or displaying alerts on errors. You can specify module-wide handlers using the `jsendProvider.setRequestCallback` and `jsendProvider.setResponseCallback` methods.
 
 ## API
 
@@ -62,31 +62,43 @@ There are two parts to the API: the provider API allowing you to perform module-
 
 ### The Provider API
 
-The `jsendProvider` can be configured in your module using two methods. These set global values that apply to all `jsend` calls made within that module.
+The `jsendProvider` can be configured in your module using three methods. These set global values that apply to all `jsend` calls made within that module.
 
-#### Setting the Base URI
+#### Setting the Relative Base
 
 ```javascript
-jsendProvider.setBase(base)
+jsendProvider.setRelativeBase(base)
 ```
 
-Specifies a string that is prepended all URLs *not* beginning with `http` (i.e., all non-absolute URLs). This is useful if all of your API calls are rooted at a standard path such as `/api/v1`.
+Specifies a string that is prepended to all URLs *not* beginning with `http` (i.e., all non-absolute URLs). This is useful if all of your API calls are rooted at a standard path such as `/api/v1`.
 
-#### Setting a Callback Function
+#### Setting a Request Callback
 
 ```javascript
-jsendProvider.setCallback(callback)
+jsendProvider.setRequestCallback(requestCallback)
 
-function callback(response) {
-    if (response) {
-        console.log('done', this.method, this.url, response);
-    } else {
-        console.log('init', this.method, this.url);
-    }
+function requestCallback(config) {
+    console.log('jsend request', config.method, config.url);
 }
 ```
 
-Specifies a function that is called at the beginning *and* completion of any `jsend` call. The `this` context of the callback function is the configuration object that was used to generate the request. The context will have at least the `this.method` and `this.url` properties. The response argument will be null when the request is initiated and is set to a JSend response object when the response is received and processed.
+Specifies a function that is called at the beginning of any `jsend` call. The `config` argument is the configuration object that was used to generate the request. This object will have at least the `method` and `url` properties. It can also have the `params` property for `GET` requests and the `data` property for `PUT`, `POST`, and `PATCH` requests.
+
+Note that this callback is synchronous. Meaning, you can modify the `config` object in the request callback and add headers or other properties as it is then passed directly to the `$http` method.
+
+#### Setting a Response Callback
+
+```javascript
+jsendProvider.setResponseCallback(responseCallback)
+
+function responseCallback(response) {
+    console.log('jsend response', this.method, this.url, response);
+}
+```
+
+Specifies a function that is called at the completion of any `jsend` call. The `this` context of the callback function is the configuration object that was used to generate the request (i.e., the same object passed to the request callback function). The response object is guaranteed to be a valid JSend response object.
+
+This callback is also synchronous. You can modify the `response` object and these modifications are passed to the success or error methods associated with the promise returned from calling one of the `jsend` methods.
 
 ### The Service API
 
@@ -111,7 +123,7 @@ The `jsend` service function uses the [strformat](https://github.com/fhellwig/st
 jsend(url, ...)
 ```
 
-Creates a URL from the specified string performing placeholder replacement (as specified by the [strformat](https://github.com/fhellwig/strformat) module) and prepending the URI base (if specified by the `jsendProvider.setBase` method). Returns an object having five HTTP methods that are all bound to this URL.
+Creates a URL from the specified string performing placeholder replacement (as specified by the [strformat](https://github.com/fhellwig/strformat) module) and prepending the URI base (if specified by the `jsendProvider.setRelativeBase` method). Returns an object having five HTTP methods that are all bound to this URL.
 
 #### Issuing a GET Request
 
@@ -176,7 +188,7 @@ jsend('/api/v1/users/{userId}/{information}', request).get({
 });
 ```
 
-Notice that the URL is constructed using property name placeholders (`{userId}` and `{information}`) and that the query parameters are specified as a `params` object. Finally, we could have omitted the `/api/v1` prefix by specifying it using the `jsendProvider.setBase('/api/v1')` configuration setting.
+Notice that the URL is constructed using property name placeholders (`{userId}` and `{information}`) and that the query parameters are specified as a `params` object. Finally, we could have omitted the `/api/v1` prefix by specifying it using the `jsendProvider.setRelativeBase('/api/v1')` configuration setting.
 
 ### Reusing the Bound Object
 

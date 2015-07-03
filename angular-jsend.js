@@ -26,18 +26,25 @@
     // UTILITY FUNCTIONS
     //------------------------------------------------------------------------
 
-    // Returns true if the specified value is a real object.
+    // Returns true if the specified argument is a real object.
     // Note that null and arrays are not considered objects.
-    function isObject(value) {
-        return value !== null && typeof value === 'object' && !Array.isArray(value);
+    function isObject(obj) {
+        return obj !== null && typeof obj === 'object' && !Array.isArray(obj);
+    }
+
+    // Returns true if the argument is a valid JSend status string.
+    function isValidStatus(status) {
+        return typeof status === 'string' && (
+            status === 'success' ||
+            status === 'fail' ||
+            status === 'error');
     }
 
     // Returns true if the specified value is a JSend response.
     // The specified value is considered a JSend repsonse if it
     // is a real object and has a valid JSend status property.
-    function isJSendResponse(value) {
-        return isObject(value) && typeof value.status === 'string' &&
-            (value.status === 'success' || value.status === 'fail' || value.status === 'error');
+    function isJSendResponse(response) {
+        return isObject(response) && isValidStatus(response.status);
     }
 
     // Processes the JSend response for an HTTP success and returns a JSend
@@ -98,21 +105,29 @@
         // PROVIDER CONFIGURATION
         //--------------------------------------------------------------------
 
-        var _base = '';
-        var _callback = null;
+        var _relativeBase = '';
+        var _requestCallback = null;
+        var _responseCallback = null;
 
-        this.setBase = function (base) {
+        this.setRelativeBase = function (base) {
             if (typeof base !== 'string') {
                 throw new Error('base must be a string');
             }
-            _base = base;
+            _relativeBase = base;
         };
 
-        this.setCallback = function (callback) {
+        this.setRequestCallback = function (callback) {
             if (typeof callback !== 'function') {
                 throw new Error('callback must be a function');
             }
-            _callback = callback;
+            _requestCallback = callback;
+        };
+
+        this.setResponseCallback = function (callback) {
+            if (typeof callback !== 'function') {
+                throw new Error('callback must be a function');
+            }
+            _responseCallback = callback;
         };
 
         //--------------------------------------------------------------------
@@ -131,15 +146,15 @@
                 if (path.substr(0, 4) === 'http') {
                     return path; // do not prepend base if absolute
                 } else {
-                    return _base + path;
+                    return _relativeBase + path;
                 }
             }
 
             // Executes the HTTP request specified by the config object.
             function http(config) {
                 var deferred = $q.defer();
-                if (_callback) {
-                    _callback.call(config, null);
+                if (_requestCallback) {
+                    _requestCallback(config);
                 }
                 $http(config).then(function (response) {
                     resolveOrReject(deferred, config, httpSuccess(response));
@@ -151,8 +166,8 @@
 
             // Resolves or rejects the promise depending on the JSend status.
             function resolveOrReject(deferred, config, obj) {
-                if (_callback) {
-                    _callback.call(config, obj);
+                if (_responseCallback) {
+                    _responseCallback.call(config, obj);
                 }
                 if (obj.status === 'success') {
                     $log.debug(config.method, config.url, obj);
