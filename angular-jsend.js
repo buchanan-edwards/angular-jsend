@@ -211,11 +211,18 @@
                 });
             }
 
-            JSend.prototype.delete = function () {
+            JSend.prototype.patch = function () {
                 return http({
                     url: this.url,
                     method: 'PATCH',
                     data: data
+                });
+            }
+
+            JSend.prototype.delete = function () {
+                return http({
+                    url: this.url,
+                    method: 'DELETE'
                 });
             }
 
