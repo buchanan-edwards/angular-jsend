@@ -91,36 +91,34 @@
     return obj;
   }
 
-  // Calls $http(config) and returns a promise that is resolved or rejected
-  // based on the JSend status. The responses are logged using $log.
-  function jsend(config) {
-    return $http(config).then(
-      function(response) {
-        return httpSuccess(response);
-      },
-      function(response) {
-        return httpError(response);
-      }
-    ).then(function(response) {
-      var req = config.method + ' ' + config.url;
-      switch (response.status) {
-        case 'success':
-          $log.debug(req, response);
-          return response;
-          break;
-        case 'fail':
-          $log.warn(req, response);
-          return $q.reject(response);
-          break;
-        case 'error':
-          $log.error(req, response);
-          return $q.reject(response);
-          break;
-      }
-    });
-  }
-
-  module.factory('jsend', function() {
-    return jsend;
+  module.factory('jsend', function($http, $q, $log) {
+    // Calls $http(config) and returns a promise that is resolved or rejected
+    // based on the JSend status. The responses are logged using $log.
+    return function(config) {
+      return $http(config).then(
+        function(response) {
+          return httpSuccess(response);
+        },
+        function(response) {
+          return httpError(response);
+        }
+      ).then(function(response) {
+        var req = config.method + ' ' + config.url;
+        switch (response.status) {
+          case 'success':
+            $log.debug(req, response);
+            return response;
+            break;
+          case 'fail':
+            $log.warn(req, response);
+            return $q.reject(response);
+            break;
+          case 'error':
+            $log.error(req, response);
+            return $q.reject(response);
+            break;
+        }
+      });
+    }
   });
 })(angular.module('jsend', []));
