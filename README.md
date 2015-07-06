@@ -1,8 +1,8 @@
 # angular-jsend
 
-An AngularJS module providing HTTP methods that process JSend responses.
+An AngularJS module providing a wrapper around $http that handles JSend responses.
 
-v0.0.8
+v0.1.0
 
 ## Overview
 
@@ -29,12 +29,21 @@ app.service('api', function (jsend) {
     
     // Gets all users and returns a promise.
     this.getUsers = function () {
-        return jsend('/api/v1/users').get();
+        return jsend({
+            method: 'GET',
+            url: '/api/v1/users'
+        });
     };
 
-    // Gets a single user and returns a promise.
-    this.getUser = function (userId) {
-        return jsend('/api/v1/users/{0}', userId).get();
+    // Gets all users that are administrators.
+    this.getAdmins = function () {
+        return jsend({
+            method: 'GET',
+            url: '/api/v1/users',
+            params: {
+                admin: true
+            }
+        });
     }
 });
 
@@ -42,171 +51,25 @@ app.service('api', function (jsend) {
 
 ## Features
 
-How is calling `jsend(<url>).get()` any different that just calling `$http.get(<url>)`?
+How is calling `jsend(config)` different that calling `$http(config)`?
 
 The `angular-jsend` utility provides a few features that help you deal with JSend responses.
 
-1. The `jsend` function creates a URL based on string formatting using the [strformat](https://github.com/fhellwig/strformat) module. This allows you to be creative in how you generate the URL. The object returned by `jsend` has the five methods (`get`, `put`, `post`, `patch`, and `delete`) bound to the URL created by `jsend`.
+- Calling `jsend` returns a promise that is resolved or rejected *based on the JSend status* and not the HTTP response status code. This is important. You may have an API where all responses are returned using a 200 (OK) response but the JSend status could be `fail` or `error`. The promise is rejected regardless of the 200 (OK) HTTP response status.
 
-2. Calling one of the five methods returns a promise that is resolved or rejected *based on the JSend status* and not the HTTP response status code. This is important. You may have an API where all responses are returned using a 200 (OK) response but the JSend status could be `fail` or `error`. The promise is rejected regardless of the 200 (OK) HTTP response status.
-
-3. If your API returns a standard HTTP response such as 404 (Not Found) *but does not return a JSend object*, then a JSend object is created with the appropriate `status`, `code`, and  `message` properties and the promise is rejected with this object.
-
-4. The `jsendProvider` can be configured using a base URI so that you need not prefix each URL with the part that is common to each call. In the example above, all calls start with `/api/v1`. Calling `jsendProvider.setRelativeBase('/api/v1')` in your module configuration takes care of this.
-
-5. You may want to perform specific tasks such as managing spinners or displaying alerts on errors. You can specify module-wide handlers using the `jsendProvider.setRequestCallback` and `jsendProvider.setResponseCallback` methods.
+- If your API returns a standard HTTP response such as 404 (Not Found) *but does not return a JSend object*, then a JSend object is created with the appropriate `status`, `code`, and  `message` properties and the promise is rejected with this object.
 
 ## API
 
-There are two parts to the API: the provider API allowing you to perform module-level configurations and the service API that performs the HTTP requests and processes the JSend responses.
-
-### The Provider API
-
-The `jsendProvider` can be configured in your module using three methods. These set global values that apply to all `jsend` calls made within that module.
-
-#### Setting the Relative Base
-
 ```javascript
-jsendProvider.setRelativeBase(base)
+jsend(config).then(successCallback, errorCallback);
 ```
 
-Specifies a string that is prepended to all URLs *not* beginning with `http` (i.e., all non-absolute URLs). This is useful if all of your API calls are rooted at a standard path such as `/api/v1`.
+The `jsend` module exports the `jsend` method. This method takes the same `config` parameter as the `$http` method. However, the response is always guaranteed to be a JSend object and the returned promise is resolved only if the JSend status is `success`. Otherwise, the promise is rejected with a JSend object having a status of `fail` or `error`.
 
-#### Setting a Request Callback
+## Synthetic Error Responses
 
-```javascript
-jsendProvider.setRequestCallback(requestCallback)
-
-function requestCallback(config) {
-    console.log('jsend request', config.method, config.url);
-}
-```
-
-Specifies a function that is called at the beginning of any `jsend` call. The `config` argument is the configuration object that was used to generate the request. This object will have at least the `method` and `url` properties. It can also have the `params` property for `GET` requests and the `data` property for `PUT`, `POST`, and `PATCH` requests.
-
-Note that this callback is synchronous. Meaning, you can modify the `config` object in the request callback and add headers or other properties as it is then passed directly to the `$http` method.
-
-#### Setting a Response Callback
-
-```javascript
-jsendProvider.setResponseCallback(responseCallback)
-
-function responseCallback(response) {
-    console.log('jsend response', this.method, this.url, response);
-}
-```
-
-Specifies a function that is called at the completion of any `jsend` call. The `this` context of the callback function is the configuration object that was used to generate the request (i.e., the same object passed to the request callback function). The response object is guaranteed to be a valid JSend response object.
-
-This callback is also synchronous. You can modify the `response` object and these modifications are passed to the success or error methods associated with the promise returned from calling one of the `jsend` methods.
-
-### The Service API
-
-The `jsend` service can be injected into your own services or controllers. It is a function (not an object or instance) that creates a set of methods when called. These methods are all bound to the URL created by the `jsend` function.
-
-**Do this:**
-
-```javascript
-jsend('/users/{0}', userId).get().then(...);
-```
-**Do NOT do this:**
-
-```javascript
-jsend.get(...).then(...);
-```
-
-The `jsend` service function uses the [strformat](https://github.com/fhellwig/strformat) module to format your URL. Since there can be an arbitrary number of placeholders (`{0}`, `{1}`, etc.), there is no way of knowing when the replacement values end and the optional `params` object (`get`) or `data` object (`put`, `post`, and `patch`) begins. Therefore, the `params` and `data` objects are passed to the HTTP method while the `jsend` service method creates the URL. Additional utility of this construct is described in a subsequent section, *Reusing the Bound Object*.
-
-#### Creating a Bound Object
-
-```javascript
-jsend(url, ...)
-```
-
-Creates a URL from the specified string performing placeholder replacement (as specified by the [strformat](https://github.com/fhellwig/strformat) module) and prepending the URI base (if specified by the `jsendProvider.setRelativeBase` method). Returns an object having five HTTP methods that are all bound to this URL.
-
-#### Issuing a GET Request
-
-```javascript
-jsend(url, ...).get(params)
-```
-
-Performs an HTTP GET request. The optional `params` are encoded and added as the query string to the URL. Returns a promise that is resolved or rejected based on the returned JSend object status or the HTTP status if the response does not look like a JSend object.
-
-#### Issuing a PUT Request
-
-```javascript
-jsend(url, ...).put(data)
-```
-
-Performs an HTTP PUT request. The `data` object specifies the request body. Returns a promise that is resolved or rejected based on the returned JSend object status or the HTTP status if the response does not look like a JSend object.
-
-#### Issuing a POST Request
-
-```javascript
-jsend(url, ...).post(data)
-```
-
-Performs an HTTP POST request. The `data` object specifies the request body. Returns a promise that is resolved or rejected based on the returned JSend object status or the HTTP status if the response does not look like a JSend object.
-
-#### Issuing a PATCH Request
-
-```javascript
-jsend(url, ...).patch(data)
-```
-
-Performs an HTTP PATCH request. The `data` object specifies the request body. Returns a promise that is resolved or rejected based on the returned JSend object status or the HTTP status if the response does not look like a JSend object.
-
-#### Issuing a DELETE Request
-
-```javascript
-jsend(url, ...).delete()
-```
-
-Performs an HTTP DELETE request. Returns a promise that is resolved or rejected based on the returned JSend object status or the HTTP status if the response does not look like a JSend object.
-
-### A Worked GET Example
-
-Assume we want to perform a GET for a specific user's security information and we want the results to omit any personally identifiable information (PII). The full URL for this fictitious example is:
-
-    /api/v1/users/19321/security?pii=false
-
-For this example, let's also assume that we have a `request` object that looks like this:
-
-```javascript
-var request = {
-    userId: 19321,
-    information: 'security'
-};
-```
-
-Here is one possibility for what the `jsend` GET call could look like:
-
-```javascript
-jsend('/api/v1/users/{userId}/{information}', request).get({
-    pii: false
-});
-```
-
-Notice that the URL is constructed using property name placeholders (`{userId}` and `{information}`) and that the query parameters are specified as a `params` object. Finally, we could have omitted the `/api/v1` prefix by specifying it using the `jsendProvider.setRelativeBase('/api/v1')` configuration setting.
-
-### Reusing the Bound Object
-
-When you call `jsend(<url>)`, you are returned an object that is bound to that URL. This allows you to be clever in using (and reusing) that object if all that changes are the query parameters or the data. For example, let's assume you had an endpoint that returned music albums based on title, artist, and year. You can create a single bound object and then perform the requests as needed, varying only the query parameters.
-
-```javascript
-var albums = jsend('/api/music/albums');
-
-albums.get(title: 'Ray of Light').then(...);
-albums.get({artist: 'Madonna'}).then(...);
-albums.get({year: 1998}).then(...);
-```
-
-This turns the strange way that the URL is created separately from the issuing the HTTP request into a useful construct.
-
-### Synthetic Error Responses
-
-If the endpoint called by one of the five `jsend` request methods returns a standard HTTP response with a body that is *not* formatted as a JSend object, then a synthetic JSend error response object is created from the HTTP status code and message. The `status` property of this response object will be set to `"error"` and the `code` property will be set to the HTTP status code.
+If the endpoint called by the five `jsend` method returns a standard HTTP response with a body that is *not* formatted as a JSend object, then a synthetic JSend error response object is created from the HTTP status code and message. The `status` property of this response object will be set to `"error"` and the `code` property will be set to the HTTP status code.
 
 This is done so that your app only has to deal with JSend responses and need not have special handling for non-successful HTTP responses. Note that this *only* occurs if the API endpoint does *not* send back a JSend object. This allows you to send back JSend `fail` or `error` responses while also setting the HTTP status code to a meaningful value thereby complying with established REST principles.
 
@@ -222,6 +85,10 @@ For example, returning the following...
 ```
 
 ...along with an HTTP status code of 400 (Bad Request), will *not* cause a synthetic error response to be created as the response already is a JSend object. As a matter of fact, if this `fail` response were returned with a 200 (OK) status code, the promise would *still* be rejected since the JSend status indicates that the request was not successful.
+
+## Parting Thoughts
+
+Originally, this module had many more features and tried to mimic much of the `$http` service. But there were enough edge cases where a simple promise wrapper around the `$http` service made the most sense. The idea is that you would most probably use `jsend` in a service and that service would abstract the complexity away from your controllers (as it should be). Therefore, crafting the `config` object for each call is not a big deal as it is something that can be localized to such a service.
 
 ## License
 

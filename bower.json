@@ -1,30 +1,29 @@
 {
-    "name": "angular-jsend",
-    "main": "angular-jsend.js",
-    "version": "0.0.8",
-    "homepage": "https://github.com/buchanan-edwards/angular-jsend",
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/buchanan-edwards/angular-jsend.git"
-    },
-    "authors": [
-        "Frank Hellwig <frank@hellwig.org>"
-    ],
-    "description": "An AngularJS module providing HTTP methods that process JSend responses.",
-    "keywords": [
-        "angular",
-        "jsend"
-    ],
-    "license": "MIT",
-    "ignore": [
-        "**/.*",
-        "node_modules",
-        "bower_components",
-        "test",
-        "tests"
-    ],
-    "dependencies": {
-        "angular": ">=1.3.0",
-        "strformat": ">=0.0.7"
-    }
+  "name": "angular-jsend",
+  "main": "angular-jsend.js",
+  "version": "0.1.0",
+  "homepage": "https://github.com/buchanan-edwards/angular-jsend",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/buchanan-edwards/angular-jsend.git"
+  },
+  "authors": [
+    "Frank Hellwig <frank@hellwig.org>"
+  ],
+  "description": "An AngularJS module providing a wrapper around $http that handles JSend responses.",
+  "keywords": [
+    "angular",
+    "jsend"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": ">=1.3.0"
+  }
 }
