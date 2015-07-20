@@ -2,7 +2,7 @@
 
 An AngularJS module providing a wrapper around $http that handles JSend responses.
 
-v0.1.0
+v0.1.1
 
 ## Overview
 

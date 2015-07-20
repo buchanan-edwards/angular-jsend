@@ -52,7 +52,7 @@
     } else {
       obj = {
         status: 'success',
-        data: res.status === 204 ? null : res.data
+        data: response.status === 204 ? null : res.data
       };
     }
     return obj;
