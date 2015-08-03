@@ -2,7 +2,7 @@
 
 An AngularJS module providing a wrapper around $http that handles JSend responses.
 
-v0.1.1
+v0.1.2
 
 ## Overview
 
@@ -22,31 +22,52 @@ Add `jsend` as a dependency to your module:
 var app = angular.module('app', ['jsend']);
 ```
 
-Assume you have an `api` service that makes calls to your API and that your API responds with JSend objects:
+Then call the `jsend` method and pass it the same `config` object that you would normally pass to the `$http` method. For example, assume you have an `users` service that makes calls to a `/api/users` endpoint and that this endpoint responds with JSend objects.
 
 ```javascript
-app.service('api', function (jsend) {
-    
-    // Gets all users and returns a promise.
-    this.getUsers = function () {
+app.service('users', function(jsend, $q) {
+
+    /**
+     * Get all users.
+     *
+     * @returns {Promise} A promise resolved with an array of users.
+     */
+    this.getUsers = function() {
         return jsend({
             method: 'GET',
-            url: '/api/v1/users'
-        });
+            url: '/api/users'
+        }).then(
+            function(response) {
+                return response.data;
+            },
+            function(response) {
+                return $q.reject(response);
+            }
+        );
     };
 
-    // Gets all users that are administrators.
-    this.getAdmins = function () {
+    /**
+     * Get all users that are administrators.
+     *
+     * @returns {Promise} A promise resolved with an array of administrators.
+     */
+    this.getAdmins = function() {
         return jsend({
             method: 'GET',
-            url: '/api/v1/users',
+            url: '/api/users',
             params: {
                 admin: true
             }
-        });
+        }).then(
+            function(response) {
+                return response.data;
+            },
+            function(response) {
+                return $q.reject(response);
+            }
+        );
     }
 });
-
 ```
 
 ## Features
@@ -67,9 +88,27 @@ jsend(config).then(successCallback, errorCallback);
 
 The `jsend` module exports the `jsend` method. This method takes the same `config` parameter as the `$http` method. However, the response is always guaranteed to be a JSend object and the returned promise is resolved only if the JSend status is `success`. Otherwise, the promise is rejected with a JSend object having a status of `fail` or `error`.
 
+## Events
+
+At the beginning of each request, a `jsend:request` event is broadcast on the `$rootScope`. The first and only argument is the `config` object passed to the `jsend` method.
+
+```javascript
+$rootScope.on('jsend:start', function(config) {
+    ...
+});
+```
+
+When a JSend response is received, a `jsend:response` event is broadcast on the `$rootScope`. The first argument is the `config` object passed to the `jsend` method and the second argument is the JSend response object.
+
+```javascript
+$rootScope.on('jsend:response', function(config, response) {
+    ...
+});
+```
+
 ## Synthetic Error Responses
 
-If the endpoint called by the five `jsend` method returns a standard HTTP response with a body that is *not* formatted as a JSend object, then a synthetic JSend error response object is created from the HTTP status code and message. The `status` property of this response object will be set to `"error"` and the `code` property will be set to the HTTP status code.
+If the endpoint called by the `jsend` method returns a standard HTTP response with a body that is *not* formatted as a JSend object, then a synthetic JSend error response object is created from the HTTP status code and message. The `status` property of this response object will be set to `"error"` and the `code` property will be set to the HTTP status code.
 
 This is done so that your app only has to deal with JSend responses and need not have special handling for non-successful HTTP responses. Note that this *only* occurs if the API endpoint does *not* send back a JSend object. This allows you to send back JSend `fail` or `error` responses while also setting the HTTP status code to a meaningful value thereby complying with established REST principles.
 
@@ -86,9 +125,15 @@ For example, returning the following...
 
 ...along with an HTTP status code of 400 (Bad Request), will *not* cause a synthetic error response to be created as the response already is a JSend object. As a matter of fact, if this `fail` response were returned with a 200 (OK) status code, the promise would *still* be rejected since the JSend status indicates that the request was not successful.
 
-## Parting Thoughts
+## Logging
 
-Originally, this module had many more features and tried to mimic much of the `$http` service. But there were enough edge cases where a simple promise wrapper around the `$http` service made the most sense. The idea is that you would most probably use `jsend` in a service and that service would abstract the complexity away from your controllers (as it should be). Therefore, crafting the `config` object for each call is not a big deal as it is something that can be localized to such a service.
+The `jsend` service logs all responses using the AngularJS `$log` facility.
+
+- A `success` status is logged using `$log.debug`.
+- A `fail` status is logged using `$log.warn`.
+- A `error` status is logged using `$log.error`.
+
+Each log entry consists of three parts: the status (e.g., `jsend:success`), the config object that generated the request, and the response.
 
 ## License
 
