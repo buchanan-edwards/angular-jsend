@@ -109,23 +109,17 @@
                 }
             ).then(
                 function(response) {
-                    var msg = '[jsend:' + response.status + ']';
+                    $rootScope.$broadcast('jsend:response', config, response)
                     switch (response.status) {
                         case JSEND_SUCCESS:
-                            $log.debug(msg, config, response);
-                            break;
+                            $log.debug('jsend', config, response);
+                            return response;
                         case JSEND_FAIL:
-                            $log.warn(msg, config, response);
-                            break;
+                            $log.warn('jsend', config, response);
+                            return $q.reject(response);
                         case JSEND_ERROR:
-                            $log.error(msg, config, response);
-                            break;
-                    }
-                    $rootScope.$broadcast('jsend:response', config, response)
-                    if (response.status === JSEND_SUCCESS) {
-                        return response;
-                    } else {
-                        return $q.reject(response);
+                            $log.error('jsend', config, response);
+                            return $q.reject(response);
                     }
                 }
             );
