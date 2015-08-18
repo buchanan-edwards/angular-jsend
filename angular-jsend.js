@@ -109,16 +109,17 @@
                 }
             ).then(
                 function(response) {
-                    $rootScope.$broadcast('jsend:response', config, response)
+                    var eventName = 'jsend:' + response.status;
+                    $rootScope.$broadcast(eventName, config, response)
                     switch (response.status) {
                         case JSEND_SUCCESS:
-                            $log.debug('jsend', config, response);
+                            $log.debug(eventName, config, response);
                             return response;
                         case JSEND_FAIL:
-                            $log.warn('jsend', config, response);
+                            $log.warn(eventName, config, response);
                             return $q.reject(response);
                         case JSEND_ERROR:
-                            $log.error('jsend', config, response);
+                            $log.error(eventName, config, response);
                             return $q.reject(response);
                     }
                 }

@@ -2,7 +2,7 @@
 
 An AngularJS module providing a wrapper around $http that handles JSend responses.
 
-v0.1.2
+v0.1.4
 
 ## Overview
 
@@ -98,17 +98,29 @@ $rootScope.on('jsend:start', function(config) {
 });
 ```
 
-When a JSend response is received, a `jsend:response` event is broadcast on the `$rootScope`. The first argument is the `config` object passed to the `jsend` method and the second argument is the JSend response object.
+When a JSend response is received, one of the following three events is broadcast on the `$rootScope`: `jsend:success`, `jsend:fail`, or `jsend:error`. The first argument is the `config` object passed to the `jsend` method and the second argument is the JSend response object.
 
 ```javascript
-$rootScope.on('jsend:response', function(config, response) {
-    ...
+$rootScope.on('jsend:success', function(config, response) {
+    console.log('Success');
+});
+```
+
+```javascript
+$rootScope.on('jsend:fail', function(config, response) {
+    console.log('Fail');
+});
+```
+
+```javascript
+$rootScope.on('jsend:error', function(config, response) {
+    console.log('Error');
 });
 ```
 
 ## Synthetic Error Responses
 
-If the endpoint called by the `jsend` method returns a standard HTTP response with a body that is *not* formatted as a JSend object, then a synthetic JSend error response object is created from the HTTP status code and message. The `status` property of this response object will be set to `"error"` and the `code` property will be set to the HTTP status code.
+If the endpoint called by the `jsend` method returns a standard HTTP response with a body that is *not* formatted as a JSend object, then a synthetic JSend error response object is created from the HTTP status code and message. The `status` property of this response object will be set to `"success"` for HTTP status codes in the range 200 to 299 and `"error"` in all other cases. For an error response, the `code` property is set to the HTTP status code.
 
 This is done so that your app only has to deal with JSend responses and need not have special handling for non-successful HTTP responses. Note that this *only* occurs if the API endpoint does *not* send back a JSend object. This allows you to send back JSend `fail` or `error` responses while also setting the HTTP status code to a meaningful value thereby complying with established REST principles.
 
