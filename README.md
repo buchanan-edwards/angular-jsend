@@ -2,7 +2,7 @@
 
 An AngularJS module providing a wrapper around $http that handles JSend responses.
 
-v0.1.4
+v0.1.5
 
 ## Overview
 
@@ -101,19 +101,19 @@ $rootScope.on('jsend:start', function(config) {
 When a JSend response is received, one of the following three events is broadcast on the `$rootScope`: `jsend:success`, `jsend:fail`, or `jsend:error`. The first argument is the `config` object passed to the `jsend` method and the second argument is the JSend response object.
 
 ```javascript
-$rootScope.on('jsend:success', function(config, response) {
+$rootScope.on('jsend:success', function(ev, config, response) {
     console.log('Success');
 });
 ```
 
 ```javascript
-$rootScope.on('jsend:fail', function(config, response) {
+$rootScope.on('jsend:fail', function(ev, config, response) {
     console.log('Fail');
 });
 ```
 
 ```javascript
-$rootScope.on('jsend:error', function(config, response) {
+$rootScope.on('jsend:error', function(ev, config, response) {
     console.log('Error');
 });
 ```
@@ -146,6 +146,14 @@ The `jsend` service logs all responses using the AngularJS `$log` facility.
 - A `error` status is logged using `$log.error`.
 
 Each log entry consists of three parts: the status (e.g., `jsend:success`), the config object that generated the request, and the response.
+
+Response logging can be disabled by calling `ev.preventDefault()` in one of the event handlers. Example:
+
+```javascript
+$rootScope.on('jsend:success', function(ev, config, response) {
+    ev.preventDefault(); // the response is not logged
+});
+```
 
 ## License
 
